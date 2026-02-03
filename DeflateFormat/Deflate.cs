@@ -1,0 +1,146 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DeflateFormat
+{
+    /// <summary>
+    /// A class for compressing and decompressing a byte[] into another byte[] via the Deflate formate
+    /// </summary>
+    public class Deflate
+    {
+        #region Fields
+        private int _maxLength;
+        private int _maxDistance;
+        private int? _maxBlockLength;
+        #endregion
+
+        #region Properties
+        /// <summary>
+        /// The method used for compression (Optimal, Dynamic, Static, Raw)
+        /// </summary>
+        public CompressionMethod Method { get; set; }
+
+        /// <summary>
+        /// The max length the compressor will repeate a sequence. Must be within (3, 258)
+        /// </summary>
+        public int MaxLength
+        {
+            get
+            {
+                return _maxLength;
+            }
+            set
+            {
+                ArgumentOutOfRangeException.ThrowIfGreaterThan(value, 258, "MaxLength");
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, 3, "MaxLength");
+                _maxLength = value;
+            }
+        }
+
+        /// <summary>
+        /// The max distance the compressor will look back for repetitions of sequences. Must be within (1, 32768)
+        /// </summary>
+        public int MaxDistance
+        {
+            get
+            {
+                return _maxDistance;
+            }
+            set
+            {
+                ArgumentOutOfRangeException.ThrowIfGreaterThan(value, 32768, "MaxDistance");
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, 1, "MaxDistance");
+                _maxDistance = value;
+            }
+        }
+
+        /// <summary>
+        /// The max length of each block (only the last block will be shorter). Must be at least 32768, or null for 1 block.
+        /// </summary>
+        public int? MaxBlockLength
+        {
+            get
+            {
+                return _maxBlockLength;
+            }
+            set
+            {
+                if (value != null) ArgumentOutOfRangeException.ThrowIfLessThan((int)value, 32768, "MaxBlockLength");
+                _maxBlockLength = value;
+            }
+        }
+        #endregion
+
+        #region Constructor
+        /// <summary>
+        /// Default Constructor. Sets all variables to their most optimised values.
+        /// </summary>
+        public Deflate() : this(CompressionMethod.Optimal, 258, 32768, null) { }
+
+        /// <summary>
+        /// Constructor for setting the CompressionMethod. Sets all other variables to their most optimised values.
+        /// </summary>
+        /// <param name="method">The method used for compression (Optimal, Dynamic, Static, Raw).</param>
+        public Deflate(CompressionMethod method) : this(method, 258, 32768, null) { }
+
+        /// <summary>
+        /// Constructor for setting the MaxLength and MaxDistance. Sets all other variables to their most optimised values.
+        /// </summary>
+        /// <param name="maxLength">The max distance the compressor will look back for repetitions of sequences. Must be within (1, 32768).</param>
+        /// <param name="maxDistance">The max length of each block (only the last block will be shorter). Must be at least 32768, or null for 1 block.</param>
+        public Deflate(int maxLength, int maxDistance) : this(CompressionMethod.Optimal, maxLength, maxDistance, null) { }
+
+        /// <summary>
+        /// Constructor for setting the MaxBlockLength. Sets all other variables to their most optimised values.
+        /// </summary>
+        /// <param name="maxBlockLength">The max length of each block (only the last block will be shorter). Must be at least 32768, or null for 1 block.</param>
+        public Deflate(int? maxBlockLength) : this(CompressionMethod.Optimal, 258, 32768, maxBlockLength) { }
+
+        /// <summary>
+        /// Constructor for setting all values.
+        /// </summary>
+        /// <param name="method">The method used for compression (Optimal, Dynamic, Static, Raw).</param>
+        /// <param name="maxLength">The max distance the compressor will look back for repetitions of sequences. Must be within (1, 32768).</param>
+        /// <param name="maxDistance">The max length of each block (only the last block will be shorter). Must be at least 32768, or null for 1 block.</param>
+        /// <param name="maxBlockLength">The max length of each block (only the last block will be shorter). Must be at least 32768, or null for 1 block.</param>
+        public Deflate(CompressionMethod method, int maxLength, int maxDistance, int? maxBlockLength)
+        {
+            Method = method;
+            MaxLength = maxLength;
+            MaxDistance = maxDistance;
+            MaxBlockLength = maxBlockLength;
+        }
+        #endregion
+
+        #region Public Methods
+        /// <summary>
+        /// Compresses an array of bytes via the Deflate format, using the class's settings.
+        /// </summary>
+        /// <param name="input">Uncompressed bytes</param>
+        /// <returns>Compressed bytes</returns>
+        public byte[] Compress(byte[] input)
+        {
+            if (input.Length == 0) return Array.Empty<byte>();
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Deompresses an array of bytes compressed via the Deflate format.
+        /// </summary>
+        /// <param name="input">Compressed bytes</param>
+        /// <returns>Uncompressed bytes</returns>
+        public byte[] Decompress(byte[] input)
+        {
+            if (input.Length == 0) return Array.Empty<byte>();
+            throw new NotImplementedException();
+        }
+        #endregion
+
+        #region Private Methods
+
+        #endregion
+    }
+}

@@ -125,7 +125,23 @@ namespace DeflateFormat
         {
             //Deal with an empty input
             if (input.Length == 0) return Array.Empty<byte>();
-            throw new NotImplementedException();
+
+            List<byte> result = new List<byte>();
+            int position = 0;
+            if (MaxBlockLength != null) throw new NotImplementedException();
+            else DeflateReadWrite.WriteBit(result, ref position, true);
+            
+            switch (Method)
+            {
+                case CompressionMethod.Raw:
+                    return CompressRaw(result, input, ref position);
+                case CompressionMethod.Static:
+                    throw new NotImplementedException("Static");
+                case CompressionMethod.Dynamic:
+                    throw new NotImplementedException("Dynamic");
+                default:
+                    throw new NotImplementedException("Optimal");
+            }
         }
 
         /// <summary>
@@ -141,7 +157,7 @@ namespace DeflateFormat
             int position = 0;
 
             bool isFinalBlock = DeflateReadWrite.ReadBit(input, ref position);
-            if (!isFinalBlock) throw new NotImplementedException();
+            if (!isFinalBlock) throw new NotImplementedException("Multiple Blocks");
 
             switch (DeflateReadWrite.ReadInt(input, ref position, 2))
             {
@@ -158,17 +174,41 @@ namespace DeflateFormat
         #endregion
 
         #region Private Methods
+        #region Compression
+        private byte[] CompressRaw(List<byte> result, byte[] input, ref int position)
+        {
+            DeflateReadWrite.WriteInt(result, ref position, 0, 2);
+            while (position % 8 != 0) position++;
+            int length = input.Length;
+            DeflateReadWrite.WriteInt(result, ref position, length, 16);
+            DeflateReadWrite.WriteInt(result, ref position, ~length, 16);
+            for (int i = 0; i < length; i++) result.Add(input[i]);
+            return result.ToArray();
+        }
+        private byte[] CompressStatic(List<byte> result, byte[] input, ref int position)
+        {
+            DeflateReadWrite.WriteInt(result, ref position, 1, 2);
+            throw new NotImplementedException();
+        }
+        private byte[] CompressDynamic(List<byte> result, byte[] input, ref int position)
+        {
+            DeflateReadWrite.WriteInt(result, ref position, 2, 2);
+            throw new NotImplementedException();
+        }
+        #endregion
         #region Decompression
         private byte[] DecompressRaw(byte[] bytes, ref int position)
         {
             while (position % 8 != 0) position++;
+
             int length = DeflateReadWrite.ReadInt(bytes, ref position, 16);
             int invLength = DeflateReadWrite.ReadInt(bytes, ref position, 16);
-            if (length != (~invLength & 0b1111111111111111)) throw new FormatException("Reserved Compression Method");
+            if (length != (~invLength & 0b1111111111111111)) throw new FormatException();
             List<byte> result = new List<byte>();
             for (int i = 0; i < length; i++)
             {
-                result.Add((byte)DeflateReadWrite.ReadInt(bytes, ref position, 8));
+                result.Add(bytes[position / 8]);
+                position += 8;
             }
             return result.ToArray();
         }
@@ -180,9 +220,6 @@ namespace DeflateFormat
         {
             throw new NotImplementedException();
         }
-        #endregion
-        #region Compression
-
         #endregion
         #endregion
     }

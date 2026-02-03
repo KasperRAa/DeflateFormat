@@ -123,6 +123,7 @@ namespace DeflateFormat
         /// <returns>Compressed bytes</returns>
         public byte[] Compress(byte[] input)
         {
+            //Deal with an empty input
             if (input.Length == 0) return Array.Empty<byte>();
             throw new NotImplementedException();
         }
@@ -134,13 +135,55 @@ namespace DeflateFormat
         /// <returns>Uncompressed bytes</returns>
         public byte[] Decompress(byte[] input)
         {
+            //Deal with an empty input
             if (input.Length == 0) return Array.Empty<byte>();
-            throw new NotImplementedException();
+
+            int position = 0;
+
+            bool isFinalBlock = DeflateReadWrite.ReadBit(input, ref position);
+            if (!isFinalBlock) throw new NotImplementedException();
+
+            switch (DeflateReadWrite.ReadInt(input, ref position, 2))
+            {
+                case 0:
+                    return DecompressRaw(input, ref position);
+                case 1:
+                    return DecompressStatic(input, ref position);
+                case 2:
+                    return DecompressDynamic(input, ref position);
+                default:
+                    throw new FormatException("Reserved Compression Method");
+            }
         }
         #endregion
 
         #region Private Methods
+        #region Decompression
+        private byte[] DecompressRaw(byte[] bytes, ref int position)
+        {
+            while (position % 8 != 0) position++;
+            int length = DeflateReadWrite.ReadInt(bytes, ref position, 16);
+            int invLength = DeflateReadWrite.ReadInt(bytes, ref position, 16);
+            if (length != (~invLength & 0b1111111111111111)) throw new FormatException("Reserved Compression Method");
+            List<byte> result = new List<byte>();
+            for (int i = 0; i < length; i++)
+            {
+                result.Add((byte)DeflateReadWrite.ReadInt(bytes, ref position, 8));
+            }
+            return result.ToArray();
+        }
+        private byte[] DecompressStatic(byte[] bytes, ref int position)
+        {
+            throw new NotImplementedException();
+        }
+        private byte[] DecompressDynamic(byte[] bytes, ref int position)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+        #region Compression
 
+        #endregion
         #endregion
     }
 }

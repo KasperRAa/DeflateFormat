@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DeflateFormat.Huffmans;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -214,7 +215,13 @@ namespace DeflateFormat
         }
         private byte[] DecompressStatic(byte[] bytes, ref int position)
         {
-            throw new NotImplementedException();
+            DeflateHuffman huffman = DeflateHuffman.GetStatic();
+
+            CodeSequence codeSequence = huffman.Read(bytes, ref position);
+
+            byte[] result = codeSequence.Decode();
+
+            return result;
         }
         private byte[] DecompressDynamic(byte[] bytes, ref int position)
         {

@@ -1,4 +1,5 @@
 ﻿using DeflateFormat.Codes;
+using DeflateFormat.Huffmans.Nodes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -69,6 +70,47 @@ namespace DeflateFormat.Huffmans
                 }
             }
             return codeSequence;
+        }
+
+        public void Write(List<byte> result, ref int position, CodeSequence codeSequence)
+        {
+            foreach (Code code in codeSequence.GetCodes()) WriteCode(result, ref position, code);
+        }
+        private void WriteCode(List<byte> result, ref int position, Code code)
+        {
+            switch (code)
+            {
+                case LiteralCode:
+                    WriteLiteralCode(result, ref position, code);
+                    break;
+                case CompressedCode:
+                    WriteCompressedCode(result, ref position, code);
+                    break;
+                case EndCode:
+                    WriteEndCode(result, ref position, code);
+                    break;
+                default:
+                    throw new Exception("Unknown Code");
+            }
+        }
+        private void WriteLiteralCode(List<byte> result, ref int position, Code code)
+        {
+            var litCode = (LiteralCode)code;
+            _litHuffman.Write(result, ref position, litCode.Value);
+        }
+        private void WriteCompressedCode(List<byte> result, ref int position, Code code)
+        {
+            var comCode = (CompressedCode)code;
+
+            _litHuffman.Write(result, ref position, comCode.LengthCode);
+            DeflateReadWrite.WriteInt(result, ref position, comCode.ExtraLength, comCode.GetExtraBitsForLength());
+
+            _disHuffman.Write(result, ref position, comCode.DistanceCode);
+            DeflateReadWrite.WriteInt(result, ref position, comCode.ExtraDistance, comCode.GetExtraBitsForDistance());
+        }
+        private void WriteEndCode(List<byte> result, ref int position, Code code)
+        {
+            _litHuffman.Write(result, ref position, EndCode.EndValue);
         }
 
         public static DeflateHuffman GetStatic()

@@ -9,27 +9,26 @@ namespace DeflateTesting
 {
     internal static class InbuiltDeflate
     {
-        public static byte[] Compress(byte[] bytes)
+        public static byte[] Compress(byte[] bytes, int bufferSize = 1024)
         {
             using var stream = new MemoryStream();
             var compressor = new DeflateStream(stream, CompressionMode.Compress, leaveOpen: true);
             compressor.Write(bytes);
             compressor.Dispose();
             stream.Position = 0;
-            return GetBytesFromStream(stream);
+            return GetBytesFromStream(stream, bufferSize);
         }
 
-        public static byte[] Decompress(byte[] bytes)
+        public static byte[] Decompress(byte[] bytes, int bufferSize = 1024)
         {
             using var stream = new MemoryStream(bytes);
             using var deflateStream = new DeflateStream(stream, CompressionMode.Decompress);
             stream.Position = 0;
-            return GetBytesFromStream(deflateStream);
+            return GetBytesFromStream(deflateStream, bufferSize);
         }
 
-        public static byte[] GetBytesFromStream(Stream stream)
+        public static byte[] GetBytesFromStream(Stream stream, int bufferSize)
         {
-            int bufferSize = 1024;
             byte[] buffer = new byte[bufferSize];
 
             int totalRead = 0;

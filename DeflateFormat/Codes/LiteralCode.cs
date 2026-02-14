@@ -8,7 +8,7 @@ namespace DeflateFormat.Codes
 {
     internal class LiteralCode : Code
     {
-        public byte Value;
+        public byte Value { get; private set; }
 
         public LiteralCode(int value)
         {

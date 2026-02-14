@@ -30,6 +30,8 @@ namespace DeflateFormat
             _codes.Add(code);
         }
 
+        public IReadOnlyList<Code> GetCodes() => _codes;
+
         public byte[] Decode()
         {
             List<byte> bytes = new List<byte>();
@@ -43,11 +45,11 @@ namespace DeflateFormat
                         break;
                     case CompressedCode:
                         CompressedCode compressedCode = (CompressedCode)code;
-                        int start = bytes.Count;
-                        for (int i = 0; i < compressedCode.Length; i++)
+                        int start = bytes.Count - compressedCode.TotalDistance;
+                        int repeatLength = compressedCode.TotalDistance;
+                        for (int i = 0; i < compressedCode.TotalLength; i++)
                         {
-                            int position = start - compressedCode.Distance + i;
-                            position %= start;
+                            int position = start + i % repeatLength;
                             bytes.Add(bytes[position]);
                         }
                         break;
@@ -60,5 +62,54 @@ namespace DeflateFormat
 
             return bytes.ToArray();
         }
+
+        public static CodeSequence Encode(IReadOnlyList<byte> bytes, int maxLength, int maxDistance)
+        {
+            CodeSequence codeSequence = new CodeSequence();
+
+            int count = bytes.Count;
+            for (int i = 0; i < count; i++)
+            {
+                CompressedCode? compressedCode = GetCompressedCode(bytes, i);
+
+                if (compressedCode != null)
+                {
+                    codeSequence.AddCode(compressedCode);
+                    i += compressedCode.TotalLength - 1;
+                }
+                else codeSequence.AddCode(new LiteralCode(bytes[i]));
+            }
+
+            codeSequence.AddCode(new EndCode());
+
+            return codeSequence;
+
+            CompressedCode? GetCompressedCode(IReadOnlyList<byte> bytes, int position)
+            {
+                int bestLength = 0, bestDistance = 0;
+
+                int lengthLimit = Math.Min(maxLength, count - position - 1);
+                int distanceLimit = Math.Min(maxDistance, position);
+
+                for (int distance = 1; distance <= distanceLimit; distance++)
+                {
+                    for (int length = 0; length <= lengthLimit; length++)
+                    {
+                        int startPosition = position - distance;
+                        byte previousByte = bytes[startPosition + length % distance];
+
+                        byte nextByte = bytes[position + length];
+
+                        if (nextByte == previousByte) { bestLength = length; bestDistance = distance; }
+                        else break;
+                    }
+                }
+
+                CompressedCode? result = null;
+                if (bestLength >= 3) result = new CompressedCode(bestLength, bestDistance);
+
+                return result;
+            }
+    }
     }
 }

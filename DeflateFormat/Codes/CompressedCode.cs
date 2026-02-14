@@ -2,20 +2,55 @@
 {
     internal class CompressedCode : Code
     {
-        public int Length;
-        public int Distance;
+        public int TotalLength { get; private set; }
+        public int TotalDistance { get; private set; }
 
-        public CompressedCode (int code, int extraLength, int distance, int extraDistance)
+        public int LengthCode { get; private set; }
+        public int DistanceCode { get; private set; }
+
+        public int ExtraLength { get; private set; }
+        public int ExtraDistance { get; private set; }
+
+        public CompressedCode (int lengthCode, int extraLength, int distanceCode, int extraDistance)
         {
-            Length = code - 257 + 3 + extraLength;
-            for (int i = 0; i < code - 257; i++) Length += (1 << _lengthExtraBits[i]) - 1;
+            LengthCode = lengthCode;
+            ExtraLength = extraLength;
+            TotalLength = lengthCode - 257 + 3 + extraLength;
+            for (int i = 0; i < lengthCode - 257; i++) TotalLength += (1 << _lengthExtraBits[i]) - 1;
 
-            Distance = distance + extraDistance + 1;
-            for (int i = 0; i < distance; i++) Distance += (1 << _distanceExtraBits[i]) - 1;
+            DistanceCode = distanceCode;
+            ExtraDistance = extraDistance;
+            TotalDistance = distanceCode + extraDistance + 1;
+            for (int i = 0; i < distanceCode; i++) TotalDistance += (1 << _distanceExtraBits[i]) - 1;
+        }
+
+        public CompressedCode(int length, int distance)
+        {
+            TotalLength = 3;
+            LengthCode = 257;
+            while (length - TotalLength > (1 << GetExtraBitsForLength(LengthCode)) - 1)
+            {
+                TotalLength += (1 << GetExtraBitsForLength(LengthCode));
+                LengthCode++;
+            }
+            ExtraLength = length - TotalLength;
+
+            TotalDistance = 1;
+            DistanceCode = 0;
+            while (distance - TotalDistance > (1 << GetExtraBitsForDistance(DistanceCode)) - 1)
+            {
+                TotalDistance += (1 << GetExtraBitsForDistance(DistanceCode));
+                DistanceCode++;
+            }
+            ExtraDistance = distance - TotalDistance;
         }
 
         public static int GetExtraBitsForLength(int code) => _lengthExtraBits[code - 257];
+        public int GetExtraBitsForLength() => GetExtraBitsForLength(LengthCode);
+
         public static int GetExtraBitsForDistance(int code) => _distanceExtraBits[code];
+        public int GetExtraBitsForDistance() => GetExtraBitsForDistance(DistanceCode);
+
 
         private static int[] _lengthExtraBits =
         {

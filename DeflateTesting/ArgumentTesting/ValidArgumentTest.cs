@@ -27,7 +27,7 @@ namespace DeflateTesting.ArgumentTesting
         }
 
         [TestMethod]
-        [DataRow(CompressionMethod.Optimal, 100, 100, 32768)]
+        [DataRow(CompressionMethod.Optimal, 100, 100, 1)]
         [DataRow(CompressionMethod.Optimal, 100, 100, null)]
         public void TestInvalidArgumentMaxBlockLength(CompressionMethod method, int maxLength, int maxDistance, int? maxBlockLength)
         {

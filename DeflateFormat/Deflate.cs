@@ -59,7 +59,7 @@ namespace DeflateFormat
         }
 
         /// <summary>
-        /// The max length of each block (only the last block will be shorter). Must be at least 32768, or null for 1 block.
+        /// The max length of each block (only the last block will be shorter). Must be at least 1, or null for 1 block.
         /// </summary>
         public int? MaxBlockLength
         {
@@ -69,7 +69,7 @@ namespace DeflateFormat
             }
             set
             {
-                if (value != null) ArgumentOutOfRangeException.ThrowIfLessThan((int)value, 32768, "MaxBlockLength");
+                if (value != null) ArgumentOutOfRangeException.ThrowIfLessThan((int)value, 1, "MaxBlockLength");
                 _maxBlockLength = value;
             }
         }
@@ -129,20 +129,24 @@ namespace DeflateFormat
 
             List<byte> result = new List<byte>();
             int position = 0;
-            if (MaxBlockLength != null) throw new NotImplementedException();
+            if (MaxBlockLength != null) throw new NotImplementedException("Multiple Blocks");
             else DeflateReadWrite.WriteBit(result, ref position, true);
             
             switch (Method)
             {
                 case CompressionMethod.Raw:
-                    return CompressRaw(result, input, ref position);
+                    CompressRaw(result, input, ref position);
+                    break;
                 case CompressionMethod.Static:
-                    throw new NotImplementedException("Static");
+                    CompressStatic(result, input, ref position);
+                    break;
                 case CompressionMethod.Dynamic:
-                    throw new NotImplementedException("Dynamic");
+                    CompressDynamic(result, input, ref position);
+                    break;
                 default:
                     throw new NotImplementedException("Optimal");
             }
+            return result.ToArray();
         }
 
         /// <summary>
@@ -176,7 +180,7 @@ namespace DeflateFormat
 
         #region Private Methods
         #region Compression
-        private byte[] CompressRaw(List<byte> result, byte[] input, ref int position)
+        private void CompressRaw(List<byte> result, byte[] input, ref int position)
         {
             DeflateReadWrite.WriteInt(result, ref position, 0, 2);
             while (position % 8 != 0) position++;
@@ -184,17 +188,21 @@ namespace DeflateFormat
             DeflateReadWrite.WriteInt(result, ref position, length, 16);
             DeflateReadWrite.WriteInt(result, ref position, ~length, 16);
             for (int i = 0; i < length; i++) result.Add(input[i]);
-            return result.ToArray();
         }
-        private byte[] CompressStatic(List<byte> result, byte[] input, ref int position)
+        private void CompressStatic(List<byte> result, byte[] input, ref int position)
         {
             DeflateReadWrite.WriteInt(result, ref position, 1, 2);
-            throw new NotImplementedException();
+
+            CodeSequence codeSequence = CodeSequence.Encode(input, MaxLength, MaxDistance);
+
+            DeflateHuffman huffman = DeflateHuffman.GetStatic();
+
+            huffman.Write(result, ref position, codeSequence);
         }
-        private byte[] CompressDynamic(List<byte> result, byte[] input, ref int position)
+        private void CompressDynamic(List<byte> result, byte[] input, ref int position)
         {
             DeflateReadWrite.WriteInt(result, ref position, 2, 2);
-            throw new NotImplementedException();
+            throw new NotImplementedException("Dynamic");
         }
         #endregion
         #region Decompression

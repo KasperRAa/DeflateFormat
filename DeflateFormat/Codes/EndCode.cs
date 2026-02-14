@@ -8,5 +8,12 @@ namespace DeflateFormat.Codes
 {
     internal class EndCode : Code
     {
+        public static int EndValue
+        {
+            get
+            {
+                return 256;
+            }
+        }
     }
 }

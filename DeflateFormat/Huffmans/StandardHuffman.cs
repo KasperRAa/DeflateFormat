@@ -11,9 +11,12 @@ namespace DeflateFormat.Huffmans
     internal class StandardHuffman
     {
         private HuffmanNode _seed;
+        private string[] _sequences;
 
         public StandardHuffman(string[] sequences)
         {
+            _sequences = sequences;
+
             _seed = new HuffmanNode();
             int length = sequences.Length;
             if (length == 1) throw new NotImplementedException();
@@ -74,6 +77,12 @@ namespace DeflateFormat.Huffmans
             }
 
             return ((LeafNode)node).Value;
+        }
+
+        public void Write(List<byte> bytes, ref int position, int value)
+        {
+            string sequence = _sequences[value];
+            foreach (char c in sequence) DeflateReadWrite.WriteBit(bytes, ref position, c == '1');
         }
     }
 }

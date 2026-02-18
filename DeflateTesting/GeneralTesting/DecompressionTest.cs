@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DeflateTesting
+namespace DeflateTesting.GeneralTesting
 {
     [TestClass]
     public class DecompressionTest

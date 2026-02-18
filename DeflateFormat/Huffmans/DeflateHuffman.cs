@@ -81,34 +81,31 @@ namespace DeflateFormat.Huffmans
             switch (code)
             {
                 case LiteralCode:
-                    WriteLiteralCode(result, ref position, code);
+                    WriteLiteralCode(result, ref position, (LiteralCode)code);
                     break;
                 case CompressedCode:
-                    WriteCompressedCode(result, ref position, code);
+                    WriteCompressedCode(result, ref position, (CompressedCode)code);
                     break;
                 case EndCode:
-                    WriteEndCode(result, ref position, code);
+                    WriteEndCode(result, ref position);
                     break;
                 default:
                     throw new Exception("Unknown Code");
             }
         }
-        private void WriteLiteralCode(List<byte> result, ref int position, Code code)
+        private void WriteLiteralCode(List<byte> result, ref int position, LiteralCode code)
         {
-            var litCode = (LiteralCode)code;
-            _litHuffman.Write(result, ref position, litCode.Value);
+            _litHuffman.Write(result, ref position, code.Value);
         }
-        private void WriteCompressedCode(List<byte> result, ref int position, Code code)
+        private void WriteCompressedCode(List<byte> result, ref int position, CompressedCode code)
         {
-            var comCode = (CompressedCode)code;
+            _litHuffman.Write(result, ref position, code.LengthCode);
+            DeflateReadWrite.WriteInt(result, ref position, code.ExtraLength, code.GetExtraBitsForLength());
 
-            _litHuffman.Write(result, ref position, comCode.LengthCode);
-            DeflateReadWrite.WriteInt(result, ref position, comCode.ExtraLength, comCode.GetExtraBitsForLength());
-
-            _disHuffman.Write(result, ref position, comCode.DistanceCode);
-            DeflateReadWrite.WriteInt(result, ref position, comCode.ExtraDistance, comCode.GetExtraBitsForDistance());
+            _disHuffman.Write(result, ref position, code.DistanceCode);
+            DeflateReadWrite.WriteInt(result, ref position, code.ExtraDistance, code.GetExtraBitsForDistance());
         }
-        private void WriteEndCode(List<byte> result, ref int position, Code code)
+        private void WriteEndCode(List<byte> result, ref int position)
         {
             _litHuffman.Write(result, ref position, EndCode.EndValue);
         }

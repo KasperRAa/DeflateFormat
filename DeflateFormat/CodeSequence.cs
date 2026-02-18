@@ -100,7 +100,14 @@ namespace DeflateFormat
 
                         byte nextByte = bytes[position + length];
 
-                        if (nextByte == previousByte) { bestLength = length; bestDistance = distance; }
+                        if (nextByte == previousByte)
+                        {
+                            if (bestLength < length)
+                            {
+                                bestLength = length;
+                                bestDistance = distance;
+                            }
+                        }
                         else break;
                     }
                 }
@@ -110,6 +117,6 @@ namespace DeflateFormat
 
                 return result;
             }
-    }
+        }
     }
 }

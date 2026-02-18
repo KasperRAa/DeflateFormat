@@ -34,6 +34,7 @@
                 LengthCode++;
             }
             ExtraLength = length - TotalLength;
+            TotalLength += ExtraLength;
 
             TotalDistance = 1;
             DistanceCode = 0;
@@ -43,6 +44,7 @@
                 DistanceCode++;
             }
             ExtraDistance = distance - TotalDistance;
+            TotalDistance += ExtraDistance;
         }
 
         public static int GetExtraBitsForLength(int code) => _lengthExtraBits[code - 257];

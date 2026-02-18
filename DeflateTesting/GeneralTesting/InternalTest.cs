@@ -5,10 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DeflateTesting
+namespace DeflateTesting.GeneralTesting
 {
     [TestClass]
-    public class CompressionTest
+    public class InternalTest
     {
 
         [TestMethod]
@@ -46,12 +46,12 @@ namespace DeflateTesting
         [DataRow("Fucking finally. It has been taking me a while, but now I can start working on my own implementation of the Deflate format.")]
         [DataRow("")]
         #endregion
-        public void TestInbuiltCompressOptimal(string str)
+        public void TestInternalConsistencyOptimal(string str)
         {
             var format = new Deflate(CompressionMethod.Optimal);
             byte[] s_messageBytes = Encoding.UTF8.GetBytes(str);
             byte[] compressedBytes = format.Compress(s_messageBytes);
-            byte[] bytes = InbuiltDeflate.Decompress(compressedBytes);
+            byte[] bytes = format.Decompress(compressedBytes);
             Assert.AreEqual(str, Encoding.UTF8.GetString(bytes));
         }
 
@@ -90,12 +90,12 @@ namespace DeflateTesting
         [DataRow("Fucking finally. It has been taking me a while, but now I can start working on my own implementation of the Deflate format.")]
         [DataRow("")]
         #endregion
-        public void TestInbuiltCompressDynamic(string str)
+        public void TestInternalConsistencyDynamic(string str)
         {
             var format = new Deflate(CompressionMethod.Dynamic);
             byte[] s_messageBytes = Encoding.UTF8.GetBytes(str);
             byte[] compressedBytes = format.Compress(s_messageBytes);
-            byte[] bytes = InbuiltDeflate.Decompress(compressedBytes);
+            byte[] bytes = format.Decompress(compressedBytes);
             Assert.AreEqual(str, Encoding.UTF8.GetString(bytes));
         }
 
@@ -134,12 +134,12 @@ namespace DeflateTesting
         [DataRow("Fucking finally. It has been taking me a while, but now I can start working on my own implementation of the Deflate format.")]
         [DataRow("")]
         #endregion
-        public void TestInbuiltCompressStatic(string str)
+        public void TestInternalConsistencyStatic(string str)
         {
             var format = new Deflate(CompressionMethod.Static);
             byte[] s_messageBytes = Encoding.UTF8.GetBytes(str);
             byte[] compressedBytes = format.Compress(s_messageBytes);
-            byte[] bytes = InbuiltDeflate.Decompress(compressedBytes);
+            byte[] bytes = format.Decompress(compressedBytes);
             Assert.AreEqual(str, Encoding.UTF8.GetString(bytes));
         }
 
@@ -178,12 +178,12 @@ namespace DeflateTesting
         [DataRow("Fucking finally. It has been taking me a while, but now I can start working on my own implementation of the Deflate format.")]
         [DataRow("")]
         #endregion
-        public void TestInbuiltCompressRaw(string str)
+        public void TestInternalConsistencyRaw(string str)
         {
             var format = new Deflate(CompressionMethod.Raw);
             byte[] s_messageBytes = Encoding.UTF8.GetBytes(str);
             byte[] compressedBytes = format.Compress(s_messageBytes);
-            byte[] bytes = InbuiltDeflate.Decompress(compressedBytes);
+            byte[] bytes = format.Decompress(compressedBytes);
             Assert.AreEqual(str, Encoding.UTF8.GetString(bytes));
         }
 

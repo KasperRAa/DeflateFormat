@@ -11,6 +11,7 @@ namespace DeflateTesting.TestCustomSettings
     [TestClass]
     public class CustomSettingsTest
     {
+        private const int _bufferSize = 65536;
         private string GetText()
         {
             DirectoryInfo? directoryInfo = new DirectoryInfo(Directory.GetCurrentDirectory());
@@ -136,8 +137,8 @@ namespace DeflateTesting.TestCustomSettings
             string str = GetText();
             byte[] s_messageBytes = Encoding.UTF8.GetBytes(str);
             byte[] compressedBytes = format.Compress(s_messageBytes);
-            byte[] bytes = InbuiltDeflate.Decompress(compressedBytes, bufferSize: 65536);
-            Assert.AreEqual(str, Encoding.UTF8.GetString(bytes));
+            byte[] bytes = InbuiltDeflate.Decompress(compressedBytes, bufferSize: _bufferSize);
+            Assert.AreEqual(str, Encoding.UTF8.GetString(bytes), $"<{s_messageBytes.Length}, {bytes.Length}>");
         }
         [TestMethod]
         #region Test Settings
@@ -257,7 +258,26 @@ namespace DeflateTesting.TestCustomSettings
             byte[] s_messageBytes = Encoding.UTF8.GetBytes(str);
             byte[] compressedBytes = format.Compress(s_messageBytes);
             byte[] bytes = format.Decompress(compressedBytes);
-            Assert.AreEqual(str, Encoding.UTF8.GetString(bytes));
+            Assert.AreEqual(str, Encoding.UTF8.GetString(bytes), $"<{s_messageBytes.Length}, {bytes.Length}>");
+        }
+        [TestMethod]
+        public void TestDecompression()
+        {
+            var format = new Deflate();
+            string str = GetText();
+            byte[] s_messageBytes = Encoding.UTF8.GetBytes(str);
+            byte[] compressedBytes = InbuiltDeflate.Compress(s_messageBytes, bufferSize: _bufferSize);
+            byte[] bytes = format.Decompress(compressedBytes);
+            Assert.AreEqual(str, Encoding.UTF8.GetString(bytes), $"<{s_messageBytes.Length}, {bytes.Length}>");
+        }
+        [TestMethod]
+        public void TestInbuiltControl()
+        {
+            string str = GetText();
+            byte[] s_messageBytes = Encoding.UTF8.GetBytes(str);
+            byte[] compressedBytes = InbuiltDeflate.Compress(s_messageBytes, bufferSize: _bufferSize);
+            byte[] bytes = InbuiltDeflate.Decompress(compressedBytes, bufferSize: _bufferSize);
+            Assert.AreEqual(str, Encoding.UTF8.GetString(bytes), $"<{s_messageBytes.Length}, {bytes.Length}>");
         }
     }
 }

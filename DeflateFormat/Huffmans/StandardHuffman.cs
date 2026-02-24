@@ -27,6 +27,7 @@ namespace DeflateFormat.Huffmans
                 BranchNode currentNode = (BranchNode)_seed.Node;
 
                 string sequence = sequences[i];
+                if (sequence.Length == 0) continue;//Unused Length
                 foreach (char c in sequence)
                 {
                     lastNode = currentNode;

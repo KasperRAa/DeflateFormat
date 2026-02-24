@@ -1,6 +1,7 @@
 ﻿using DeflateFormat.Codes;
 using DeflateFormat.Huffmans.Nodes;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,13 +23,14 @@ namespace DeflateFormat.Huffmans
             _disHuffman = new StandardHuffman(disSequences);
         }
 
-        private string[] GetSequencesFromLengths(List<byte> lengths)
+        private static string[] GetSequencesFromLengths(IReadOnlyList<byte> lengths)
         {
             int lengthCap = lengths.Max() + 1;
             int[] valueByLength = new int[lengthCap];
 
             int[] lengthCounts = new int[lengthCap];
             foreach (byte l in lengths) lengthCounts[l]++;
+            lengthCounts[0] = 0;
 
             for (int length = 1; length < lengthCap; length++)
             {
@@ -42,6 +44,7 @@ namespace DeflateFormat.Huffmans
             for (int l = 0; l < lengthCount; l++)
             {
                 int length = lengths[l];
+                if (length == 0) { sequences[l] = ""; continue; }//Unused Length. Mark as such and skip.
                 string sequence = Convert.ToString(valueByLength[length], toBase: 2).PadLeft(length, '0');
                 sequences[l] = sequence;
                 if (sequences[l].Length != length) throw new Exception($"Huffman Bit Sequence is invalid {{({sequence}.Length != {length}), {l}}}");
@@ -122,6 +125,57 @@ namespace DeflateFormat.Huffmans
             for (int i = 000; i <= 31; i++) disLengths.Add(5);
 
             return new DeflateHuffman(litLengths, disLengths);
+        }
+
+        internal static DeflateHuffman GetDynamic(byte[] bytes, ref int position)
+        {
+            int HLIT = DeflateReadWrite.ReadInt(bytes, ref position, 5) + 257;
+            int HDIST = DeflateReadWrite.ReadInt(bytes, ref position, 5) + 1;
+            int HCLEN = DeflateReadWrite.ReadInt(bytes, ref position, 4) + 4;
+
+            int[] readOrder = new int[] { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
+
+            byte[] lengths = new byte[19];
+
+            for (int i = 0; i < HCLEN; i++) lengths[readOrder[i]] = (byte)DeflateReadWrite.ReadInt(bytes, ref position, 3);
+
+            string[] decodeStrings = GetSequencesFromLengths(lengths);
+            StandardHuffman decoder = new StandardHuffman(decodeStrings);
+
+            List<byte> litLengths = new();
+            FillDynamicLengths(bytes, ref position, litLengths, HLIT, decoder);
+
+            List<byte> disLengths = new();
+            FillDynamicLengths(bytes, ref position, disLengths, HDIST, decoder);
+
+            return new DeflateHuffman(litLengths, disLengths);
+            throw new NotImplementedException($"<{HLIT}, {HDIST}, {HCLEN}>");
+        }
+        private static void FillDynamicLengths(byte[] bytes, ref int position, List<byte> lengths, int goal, StandardHuffman decoder)
+        {
+            while (lengths.Count < goal)
+            {
+                int code = decoder.Read(bytes, ref position);
+                if (code < 16) lengths.Add((byte)code);
+                else if (code == 16)
+                {
+                    byte lastCode = lengths.Last();
+                    int repeat = DeflateReadWrite.ReadInt(bytes, ref position, 2) + 3;
+                    for (int i = 0; i < repeat; i++) lengths.Add(lastCode);
+                }
+                else if (code == 17)
+                {
+                    int zeroes = DeflateReadWrite.ReadInt(bytes, ref position, 3) + 3;
+                    for (int i = 0; i < zeroes; i++) lengths.Add(0);
+                }
+                else if (code == 18)
+                {
+                    int zeroes = DeflateReadWrite.ReadInt(bytes, ref position, 7) + 11;
+                    for (int i = 0; i < zeroes; i++) lengths.Add(0);
+                }
+                else throw new Exception($"Unknown Code {code}");
+            }
+            if (lengths.Count != goal) throw new Exception("Decoded Dynamic Length Incorrectly.");
         }
     }
 }

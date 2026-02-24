@@ -233,7 +233,13 @@ namespace DeflateFormat
         }
         private byte[] DecompressDynamic(byte[] bytes, ref int position)
         {
-            throw new NotImplementedException();
+            DeflateHuffman huffman = DeflateHuffman.GetDynamic(bytes, ref position);
+
+            CodeSequence codeSequence = huffman.Read(bytes, ref position);
+
+            byte[] result = codeSequence.Decode();
+
+            return result;
         }
         #endregion
         #endregion

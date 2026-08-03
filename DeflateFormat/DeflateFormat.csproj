@@ -7,4 +7,13 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Reference Include="HuffmanTreeBytes">
+      <HintPath>ddl\HuffmanTreeBytes.dll</HintPath>
+    </Reference>
+    <Reference Include="HuffmanTreeInts">
+      <HintPath>ddl\HuffmanTreeInts.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

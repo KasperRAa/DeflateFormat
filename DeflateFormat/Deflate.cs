@@ -202,7 +202,15 @@ namespace DeflateFormat
         private void CompressDynamic(List<byte> result, byte[] input, ref int position)
         {
             DeflateReadWrite.WriteInt(result, ref position, 2, 2);
-            throw new NotImplementedException("Dynamic");
+
+            CodeSequence codeSequence = CodeSequence.Encode(input, MaxLength, MaxDistance);
+
+            DeflateHuffman huffman = DeflateHuffman.GetDynamic(codeSequence);
+
+            huffman.WriteDynamic(result, ref position);
+
+            huffman.Write(result, ref position, codeSequence);
+            //throw new NotImplementedException("Dynamic");
         }
         #endregion
         #region Decompression
@@ -211,8 +219,8 @@ namespace DeflateFormat
             while (position % 8 != 0) position++;
 
             int length = DeflateReadWrite.ReadInt(bytes, ref position, 16);
-            int invLength = DeflateReadWrite.ReadInt(bytes, ref position, 16);
-            if (length != (~invLength & 0b1111111111111111)) throw new FormatException();
+            int invLength = ~DeflateReadWrite.ReadInt(bytes, ref position, 16) & 0b1111111111111111;
+            if (length != invLength) throw new FormatException();
             List<byte> result = new List<byte>();
             for (int i = 0; i < length; i++)
             {
@@ -233,7 +241,7 @@ namespace DeflateFormat
         }
         private byte[] DecompressDynamic(byte[] bytes, ref int position)
         {
-            DeflateHuffman huffman = DeflateHuffman.GetDynamic(bytes, ref position);
+            DeflateHuffman huffman = DeflateHuffman.ReadDynamic(bytes, ref position);
 
             CodeSequence codeSequence = huffman.Read(bytes, ref position);
 

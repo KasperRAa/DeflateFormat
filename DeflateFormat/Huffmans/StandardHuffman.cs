@@ -19,7 +19,10 @@ namespace DeflateFormat.Huffmans
 
             _seed = new HuffmanNode();
             int length = sequences.Length;
-            if (length == 1) throw new NotImplementedException();
+
+            //2 if-statements for when writting or reading a dynamic huffman which does not use lengths or distances
+            if (length == 0) return;
+            if (length == 1) return;
 
             for (int i = 0; i < length; i++)
             {
@@ -56,8 +59,9 @@ namespace DeflateFormat.Huffmans
             switch (node)
             {
                 case BranchNode:
-                    ConfirmHuffman(((BranchNode)node).Left, sequence + '0');
-                    ConfirmHuffman(((BranchNode)node).Right, sequence + '1');
+                    var branch = (BranchNode)node;
+                    ConfirmHuffman(branch.Left, sequence + '0');
+                    ConfirmHuffman(branch.Right, sequence + '1');
                     break;
                 case LeafNode:
                     break;
@@ -84,6 +88,33 @@ namespace DeflateFormat.Huffmans
         {
             string sequence = _sequences[value];
             foreach (char c in sequence) DeflateReadWrite.WriteBit(bytes, ref position, c == '1');
+        }
+
+        public Dictionary<int, string> GetDictionary()
+        {
+            var dict = new Dictionary<int, string>();
+
+            if (((BranchNode)_seed.Node).Left.GetType() == typeof(Node) && ((BranchNode)_seed.Node).Right.GetType() == typeof(Node))
+            {
+                dict.Add(0, "");
+                return dict;
+            }
+
+            RecursiveDepthSearch(_seed.Node, dict, "");
+
+            return dict;
+
+            void RecursiveDepthSearch(Node node, Dictionary<int, string> dict, string path)
+            {
+                if (node.GetType() == typeof(LeafNode)) dict.Add(((LeafNode)node).Value, path);
+                else
+                {
+                    BranchNode branch = (BranchNode)node;
+
+                    RecursiveDepthSearch(branch.Left, dict, path + "0");
+                    RecursiveDepthSearch(branch.Right, dict, path + "1");
+                }
+            }
         }
     }
 }

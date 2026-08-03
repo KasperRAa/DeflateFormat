@@ -144,7 +144,8 @@ namespace DeflateFormat
                     CompressDynamic(result, input, ref position);
                     break;
                 default:
-                    throw new NotImplementedException("Optimal");
+                    CompressOptimal(result, input, ref position);
+                    break;
             }
             return result.ToArray();
         }
@@ -210,7 +211,54 @@ namespace DeflateFormat
             huffman.WriteDynamic(result, ref position);
 
             huffman.Write(result, ref position, codeSequence);
-            //throw new NotImplementedException("Dynamic");
+        }
+        private void CompressOptimal(List<byte> result, byte[] input, ref int position)
+        {
+            //Estimate size of Raw
+            long rawBitSize = 2;
+            if (input.Length <= 65_535)
+            {
+                while ((position + rawBitSize) % 8 != 0) rawBitSize++;
+                rawBitSize += 32;
+                rawBitSize += input.Length * 8;
+            }
+            else rawBitSize = long.MaxValue;
+
+            //Get CodeSequence
+            CodeSequence codeSequence = CodeSequence.Encode(input, MaxLength, MaxDistance);
+
+            //Estimate size of Static
+            long staticBitSize = 2;
+            DeflateHuffman staticHuffman = DeflateHuffman.GetStatic();
+            staticHuffman.EstimateSize(ref staticBitSize, codeSequence);
+
+            //Estimate size of Dynamic
+            long dynamicBitSize = 2;
+            DeflateHuffman dynamicHuffman = DeflateHuffman.GetDynamic(codeSequence);
+
+            List<byte> placeholder = new();
+            int placeholderPosition = 0;
+            dynamicHuffman.WriteDynamic(placeholder, ref placeholderPosition);
+            dynamicBitSize += placeholderPosition;
+
+            staticHuffman.EstimateSize(ref dynamicBitSize, codeSequence);
+
+            //Use the smallest option
+            if (rawBitSize < staticBitSize && rawBitSize < dynamicBitSize)
+            {
+                CompressRaw(result, input, ref position);
+            }
+            else if (staticBitSize < dynamicBitSize)
+            {
+                DeflateReadWrite.WriteInt(result, ref position, 1, 2);
+                staticHuffman.Write(result, ref position, codeSequence);
+            }
+            else
+            {
+                DeflateReadWrite.WriteInt(result, ref position, 2, 2);
+                dynamicHuffman.WriteDynamic(result, ref position);
+                dynamicHuffman.Write(result, ref position, codeSequence);
+            }
         }
         #endregion
         #region Decompression

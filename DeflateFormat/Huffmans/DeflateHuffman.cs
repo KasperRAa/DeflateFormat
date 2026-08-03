@@ -80,7 +80,7 @@ namespace DeflateFormat.Huffmans
         }
 
         #region Write Code Functions
-        public void Write(List<byte> result, ref int position, CodeSequence codeSequence)
+        internal void Write(List<byte> result, ref int position, CodeSequence codeSequence)
         {
             foreach (Code code in codeSequence.GetCodes()) WriteCode(result, ref position, code);
         }
@@ -119,7 +119,7 @@ namespace DeflateFormat.Huffmans
         }
         #endregion
 
-        public static DeflateHuffman GetStatic()
+        internal static DeflateHuffman GetStatic()
         {
             List<byte> litLengths = new List<byte>();
             for (int i = 000; i <= 143; i++) litLengths.Add(8);
@@ -393,5 +393,39 @@ namespace DeflateFormat.Huffmans
             }
         }
 
+        internal void EstimateSize(ref long bitSize, CodeSequence codeSequence)
+        {
+            Dictionary<int, string> tempDict;
+
+            tempDict = _litHuffman.GetDictionary();
+            var litDict = new Dictionary<int, int>();
+            foreach (var pair in tempDict) litDict.Add(pair.Key, pair.Value.Length);
+
+            tempDict = _disHuffman.GetDictionary();
+            var disDict = new Dictionary<int, int>();
+            foreach (var pair in tempDict) disDict.Add(pair.Key, pair.Value.Length);
+
+            foreach (var code in codeSequence.GetCodes())
+            {
+                switch (code)
+                {
+                    case LiteralCode:
+                        bitSize += litDict[((LiteralCode)code).Value];
+                        break;
+                    case CompressedCode:
+                        var compCode = (CompressedCode)code;
+                        bitSize += litDict[compCode.LengthCode];
+                        bitSize += compCode.GetExtraBitsForLength();
+                        bitSize += disDict[compCode.DistanceCode];
+                        bitSize += compCode.GetExtraBitsForDistance();
+                        break;
+                    case EndCode:
+                        bitSize += litDict[EndCode.EndValue];
+                        break;
+                    default:
+                        throw new Exception($"Unknown code: {code.GetType().Name}");
+                }
+            }
+        }
     }
 }
